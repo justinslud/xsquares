@@ -107,7 +107,7 @@ class Trie:
 
         return pCrawl
     
-    def get_remaining_nodes(self, node, length, substring=''):
+    def get_remaining_nodes(self, node, substring=''):
         pCrawl = node
 
         if pCrawl.isEndOfWord:
@@ -115,7 +115,7 @@ class Trie:
 
         for index, child in enumerate(pCrawl.children):
             if child is not None:
-                for other in self.get_remaining_nodes(child, length, substring=''):
+                for other in self.get_remaining_nodes(child, substring=''):
                     yield self._indexToChar(index) + other
 
     def all_possible_xsquares(self, xsquares, axis, i):
@@ -125,7 +125,7 @@ class Trie:
             words = xsquare.rows if axis == 0 else xsquare.cols
             word = words[i]
 
-            for test_substring in self.get_remaining_nodes(self.get_node(word), xsquare.n-i-axis):
+            for test_substring in self.get_remaining_nodes(self.get_node(word)):
                 if not test_substring:
                     break
 

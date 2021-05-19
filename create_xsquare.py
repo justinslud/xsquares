@@ -42,10 +42,6 @@ class Xsquare:
             if len(self.rows[i]) != self.n:
                 self.rows[i] += word[i]
 
-    # def is_complete(self):
-    #     # checks all rows and cols are length n
-    #     return all([len(row) == self.n for row in self.rows] + [len(col) == self.n for col in self.cols])
-
     def has_no_duplicates(self):
         rows = [row for row in self.rows if len(row.strip()) == self.n]
         cols = [col for col in self.cols if len(col.strip()) == self.n] 
@@ -71,10 +67,10 @@ class Xsquare:
         return string
 
 
-def create_squares(words, n, t, num=1, start_index=1):
+def create_squares(words, n, t, num=1, start_index=0, end_index=-1):
     complete_squares = []
 
-    for word in words[start_index:]:
+    for word in words[start_index:end_index]:
         print(word)
         xsquare = Xsquare(n)
         xsquare.set_row(0, word)
@@ -102,6 +98,7 @@ def create_squares(words, n, t, num=1, start_index=1):
             for xsquare in xsquares:
                 complete_squares.append(xsquare)
                 print(xsquare)
+                if n >= 6: print('\a') # alert if rare find
 
             if len(complete_squares) >= num:
                 return complete_squares
@@ -124,10 +121,17 @@ parser.add_argument('-s', '--start_index',
                     action='store',
                     type=int)
 
+parser.add_argument('-e', '--end_index', 
+                    help='where in the word list to end',
+                    action='store',
+                    type=int)
+
 parser.add_argument('-a', '--num', 
                     help='number of xsquares to find',
                     action='store',
                     type=int)
+
+
 
 args = parser.parse_args()
 
@@ -139,6 +143,9 @@ if not args.num:
 
 if not args.start_index:
     args.start_index = 0
+
+if not args.end_index:
+    args.end_index = 0
 
 path = './word_lists/30k_by_length/'
 words = [word.strip() for word in open(path + args.n + '.txt', 'r').readlines()]
@@ -153,7 +160,7 @@ def save_to_csv(xsquares, n):
         writer.writerows([xsquare.rows for xsquare in xsquares])
 
 def main():
-    xsquares = create_squares(words, n=int(args.n), t=t, num=args.num, start_index=args.start_index)
+    xsquares = create_squares(words, n=int(args.n), t=t, num=args.num, start_index=args.start_index, end_index=args.end_index)
 
     for xsquare in xsquares:
         print(xsquare, '\n')
