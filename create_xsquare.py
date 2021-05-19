@@ -1,15 +1,6 @@
 from trie import TrieNode, Trie
-# from ngrams import open_bigrams, open_trigrams
-# from operator import concat
-from functools import reduce
-
-ITER_LIMIT = 1e8
-
-def charToIndex(ch):
-    return ord(ch)-ord('A')
-
-def indexToChar(index):
-    return chr(ord('A') + index)
+import argparse
+import csv
 
 def create_trie(words):
     t = Trie()
@@ -20,9 +11,9 @@ def create_trie(words):
     return t
 
 class Xsquare:
-    # assumes we fill in xsquare alternating rows and cols
     def __init__(self, n=5, words=None, axis=None):
         self.n = n
+        self.num_descendants_axis = 0 
         
         if words:
             for i, word in enumerate(words):
@@ -51,9 +42,9 @@ class Xsquare:
             if len(self.rows[i]) != self.n:
                 self.rows[i] += word[i]
 
-    def is_complete(self):
-        # checks all rows and cols are length n
-        return all([len(row) == self.n for row in self.rows] + [len(col) == self.n for col in self.cols])
+    # def is_complete(self):
+    #     # checks all rows and cols are length n
+    #     return all([len(row) == self.n for row in self.rows] + [len(col) == self.n for col in self.cols])
 
     def has_no_duplicates(self):
         rows = [row for row in self.rows if len(row.strip()) == self.n]
@@ -70,22 +61,6 @@ class Xsquare:
 
         return True
 
-    # can always check bigrams after first row and column added
-    def bigram_score(self, axis, i):
-        score = 0
-        words = self.rows if axis == 0 else self.cols
-        for word in words:
-            score += bigrams[word[i-1 : i]]
-
-        return score / len(words)
-
-    # must have at least 3 chars before checking trigram
-    def trigram_score(self, axis, num):
-        words = self.rows if axis == 0 else self.cols
-
-    def ngram_score(self, axis, num):
-        return trigram_score + bigram_score
-
 
     def __str__(self):
         # used when printing grid
@@ -96,70 +71,95 @@ class Xsquare:
         return string
 
 
-def create_squares(words, n, t, num=1, limit=ITER_LIMIT, start_index=0):
-    # prints last word used as first row before returning
-
-    iterations = 1
+def create_squares(words, n, t, num=1, start_index=1):
     complete_squares = []
 
     for word in words[start_index:]:
         print(word)
         xsquare = Xsquare(n)
+        xsquare.set_row(0, word)
         xsquares = [xsquare]
         possible = True
-        xsquare.set_row(0, word)
 
         for i in range(0, n):
-            iterations += 1
-
             # if we are past the first row then add another row
             if i != 0:
-                # xsquare = t.xsquare_with_best_addition(xsquare, axis=0, i=i)
                 xsquares = t.all_possible_xsquares(xsquares, axis=0, i=i)
+                # move onto next starting word if no more possible xsquares
                 if not xsquares:
                     possible = False
                     break
             
             # if we are before the last column then add another column
             if i != n-1:
-                # xsquare = t.xsquare_with_best_addition(xsquare, axis=1, i=i)
                 xsquares = t.all_possible_xsquares(xsquares, axis=1, i=i)
                 if not xsquares:
                     possible = False
                     break
 
         if possible:
+            print('at least one xsquare found for', word)
             for xsquare in xsquares:
-                if xsquare.is_complete() and xsquare.has_no_duplicates():
-                    # print(xsquare)
-                    complete_squares.append(xsquare)
+                complete_squares.append(xsquare)
+                print(xsquare)
 
-                    if len(complete_squares) == num:
-                        return complete_squares
+            if len(complete_squares) >= num:
+                return complete_squares
 
-        if iterations >= ITER_LIMIT:
-            print(word)
-            return complete_squares
-
-        else:
-            print('no xsquare for', word)
+        # else:
+            # print('no xsquare for', word)
 
     return complete_squares
 
 # GLOBALS
 
-path = './word_lists/30k_by_length/' # hardcoded for now
-words = [word.strip() for word in open(path + '4' + '.txt', 'r').readlines()]
+parser = argparse.ArgumentParser()
+
+parser.add_argument('-n', '--n', 
+                    help='size of xsquare',
+                    action='store')
+
+parser.add_argument('-s', '--start_index', 
+                    help='where in the word list to begin',
+                    action='store',
+                    type=int)
+
+parser.add_argument('-a', '--num', 
+                    help='number of xsquares to find',
+                    action='store',
+                    type=int)
+
+args = parser.parse_args()
+
+if not args.n:
+    args.n = '5'
+
+if not args.num:
+    args.num = 10
+
+if not args.start_index:
+    args.start_index = 0
+
+path = './word_lists/30k_by_length/'
+words = [word.strip() for word in open(path + args.n + '.txt', 'r').readlines()]
 t = create_trie(words)
 
-def main():
-    # bigrams = open_bigrams
-    # trigrams = open_trigrams
+def save_to_csv(xsquares, n):
+    with open('./output/' + n + '.csv', 'w') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
 
-    xsquares = create_squares(words, n=4, t=t, num=1)
+        # for xsquare in xsquares:
+        #     writer.writerow(xsquare.rows)   
+        writer.writerows([xsquare.rows for xsquare in xsquares])
+
+def main():
+    xsquares = create_squares(words, n=int(args.n), t=t, num=args.num, start_index=args.start_index)
 
     for xsquare in xsquares:
         print(xsquare, '\n')
+
+    if len(xsquares) >= 10:
+        save_to_csv(xsquares, args.n)
 
 if __name__ == '__main__':
     main()

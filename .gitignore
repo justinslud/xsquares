@@ -2,6 +2,9 @@
 scripts/
 junk/
 .vscode/
+output/
+*_results/
+profile_functions.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
